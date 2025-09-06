@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'users',
 ]
 
@@ -98,6 +99,15 @@ REST_FRAMEWORK = {
     ),
 }
 
+#simple jwt settings
+from datetime import timedelta
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=7),   # short-lived access token
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),     # refresh lasts 1 day
+    "ROTATE_REFRESH_TOKENS": True,                   # issue new refresh when used
+    "BLACKLIST_AFTER_ROTATION": True,                # old refresh becomes invalid
+    "AUTH_HEADER_TYPES": ("Bearer",),                # Authorization: Bearer <token>
+}
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -133,6 +143,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Media files
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media") 
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
