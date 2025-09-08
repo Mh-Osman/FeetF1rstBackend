@@ -69,9 +69,25 @@ class ProfileAdmin(ModelAdmin):
 
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
-    list_display = ("user", "first_name", "last_name", "street_address", "city", "country", "phone_number")
-    search_fields = ("user__email", "first_name", "last_name", "street_address", "city", "country")
-    list_filter = ("city", "country")
+    list_display = (
+        "user",
+        "address_type",   # <-- added
+        "first_name",
+        "last_name",
+        "street_address",
+        "city",
+        "country",
+        "phone_number",
+    )
+    search_fields = (
+        "user__email",
+        "first_name",
+        "last_name",
+        "street_address",
+        "city",
+        "country",
+    )
+    list_filter = ("address_type", "city", "country")  # <-- added filter
 
 @admin.register(Pdfs)
 class PdfsAdmin(admin.ModelAdmin):

@@ -98,7 +98,14 @@ class Profile(models.Model):
 
 
 class Address(models.Model):
+    ADDRESS_TYPE_CHOICES = [
+        ("shipping", "Shipping Address"),
+        ("billing", "Billing Address"),
+        ("office", "Office Address"),
+        ("other", "Other"),
+    ]
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="addresses")
+    address_type = models.CharField(max_length=20, choices=ADDRESS_TYPE_CHOICES, default="shipping")
     first_name = models.CharField(max_length=100 , default="")  # default added to avoid issues with existing records
     last_name = models.CharField(max_length=100 , default="")   # default added to avoid issues with existing records
     street_address = models.CharField(max_length=255)
@@ -107,6 +114,7 @@ class Address(models.Model):
     city = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20)
     country = models.CharField(max_length=100)
+    
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}, {self.street_address}, {self.city}, {self.country}"

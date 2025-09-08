@@ -1,86 +1,55 @@
-# products/admin.py
 from django.contrib import admin
-from .models import ProductCategory, ProductSubCategory, Brand, Product, ProductImage, ProductVariant
+from .models import Product, ProductVariant
 
-# Inline for Product Images
-class ProductImageInline(admin.TabularInline):
-    model = ProductImage
-    extra = 1
-    fields = ('image', 'alt_text_en', 'alt_text_it', 'alt_text_de', 'is_main')
-
-# Inline for Product Variants
-
+# 1. Define the Inline class for ProductVariant
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
-    extra = 1
-    fields = ('size', 'color_en', 'color_it', 'color_de', 'stock', 'SKU_variant', 'image')
+    extra = 1 # Number of empty forms to display for new variants
+    # Optional: Customize the fields displayed in the inline
+    fields = ('size', 'color', 'stock', 'price_override', 'sku', 'image')
+    # You can also set readonly_fields here if you want certain variant fields uneditable in the inline
+    # readonly_fields = ('sku',) # Example: make SKU read-only after creation
 
-@admin.register(ProductCategory)
-class ProductCategoryAdmin(admin.ModelAdmin):
-    list_display = ('name_en', 'name_it', 'name_de') # Removed slug
-    # removed prepopulated_fields for slug
-
-@admin.register(ProductSubCategory)
-class ProductSubCategoryAdmin(admin.ModelAdmin):
-    list_display = ('name_en', 'name_it', 'name_de', 'category') # Removed slug
-    list_filter = ('category',)
-    # removed prepopulated_fields for slug
-
-from django.contrib import admin
-from django.utils.html import format_html
-from .models import Brand
-
-
-@admin.register(Brand)
-class BrandAdmin(admin.ModelAdmin):
-    list_display = ("logo_thumb", "name")
-    search_fields = ("name",)
-    readonly_fields = ("logo_preview",)
-
-    fieldsets = (
-        (None, {"fields": ("name", "logo")}),
-        ("Preview", {"fields": ("logo_preview",)}),
-    )
-
-    def logo_thumb(self, obj):
-        if obj.logo and hasattr(obj.logo, "url"):
-            return format_html(
-                '<img src="{}" style="height:32px;width:32px;object-fit:contain;border-radius:4px;" />',
-                obj.logo.url,
-            )
-        return "—"
-    logo_thumb.short_description = "Logo"
-    logo_thumb.admin_order_field = "logo"
-
-    def logo_preview(self, obj):
-        if obj.logo and hasattr(obj.logo, "url"):
-            return format_html(
-                '<img src="{}" style="max-height:200px;max-width:200px;object-fit:contain;border:1px solid #ddd;padding:4px;" />',
-                obj.logo.url,
-            )
-        return "No logo uploaded"
-    logo_preview.short_description = "Current logo"
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name_en', 'name_de', 'category', 'subcategory', 'brand', 'price', 'is_available')
-    list_filter = ('category', 'subcategory', 'brand', 'is_available')
-    search_fields = ('name_en', 'name_it', 'name_de', 'description_en', 'description_it', 'description_de', 'SKU')
-    # removed prepopulated_fields for slug
-    inlines = [ProductImageInline, ProductVariantInline]
-    fieldsets = (
-        (None, {
-            'fields': ('name_en', 'name_it', 'name_de', 'description_en', 'description_it', 'description_de', 'price', 'SKU', 'is_available') # Removed slug
-        }),
-        ('Categorization', {
-            'fields': ('category', 'subcategory', 'brand')
-        }), 
-        ('Ratings', {
-            'fields': ('average_rating', 'number_of_reviews'),
-            'classes': ('collapse',)
-        }),
-        ('Timestamps', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
+    list_display = (
+        "name_en",
+        "category",
+        "price",
+        "is_active",
+        "display_variants_count" # Add a custom method to show variant count
     )
-    readonly_fields = ('created_at', 'updated_at', 'average_rating', 'number_of_reviews')
+    search_fields = ("name_en", "name_it", "name_de", "name_fr")
+    list_filter = ("category", "is_active")
+
+    # 2. Add the inline to the ProductAdmin
+    inlines = [ProductVariantInline]
+
+    # Custom method to display the count of variants for each product
+    def display_variants_count(self, obj):
+        return obj.variants.count()
+    display_variants_count.short_description = "Variants" # Column header in list_display
+
+
+@admin.register(ProductVariant)
+class ProductVariantAdmin(admin.ModelAdmin):
+    list_display = (
+        "product",
+        "color",
+        "size",
+        "stock",
+        "get_price", # This method is defined on your ProductVariant model
+        "sku",
+        "image_tag" # Add a custom method to display the image thumbnail
+    )
+    search_fields = ("product__name_en", "color", "size", "sku")
+    list_filter = ("product__category", "color", "size") # Filter by product category, color, size
+    ordering = ('product__name_en', 'color', 'size') # Order for better readability
+
+    # Custom method to display a thumbnail of the variant image in the admin list view
+    def image_tag(self, obj):
+        if obj.image and hasattr(obj.image, 'url'):
+            from django.utils.html import format_html
+            return format_html('<img src="{}" style="width: 50px; height: 50px; object-fit: contain;" />'.format(obj.image.url))
+        return "No Image"
+    image_tag.short_description = "Image"

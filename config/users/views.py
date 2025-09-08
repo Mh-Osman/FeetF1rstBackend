@@ -17,8 +17,6 @@ from .serializers import ProfileSerializer, AddressSerializer
 from .models import Profile, Address
 
 
-
-
 User = get_user_model()
 
 @api_view(['POST'])

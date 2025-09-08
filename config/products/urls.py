@@ -1,29 +1,16 @@
-# products/urls.py
 from django.urls import path
 from . import views
+from .views import product_list, product_detail, product_variants_list, variant_list, variant_detail
 
-urlpatterns = [
-    # Product Categories
-    path('categories/', views.category_list_create, name='category-list-create'),
-    path('categories/<int:pk>/', views.category_detail, name='category-detail'),
-
-    # Product SubCategories
-    path('subcategories/', views.subcategory_list_create, name='subcategory-list-create'),
-    path('subcategories/<int:pk>/', views.subcategory_detail, name='subcategory-detail'),
-
-    # Brands
-    path('brands/', views.brand_list_create, name='brand-list-create'),
-    path('brands/<int:pk>/', views.brand_detail, name='brand-detail'),
-
-    # Products
-    path('products/', views.product_list_create, name='product-list-create'),
+urlpatterns = [ 
+    path('products/', views.product_list, name='product-list'),
     path('products/<int:pk>/', views.product_detail, name='product-detail'),
+    # This URL lists ALL variants belonging to a specific product
+    path('products/<int:pk>/variants/', views.product_variants_list, name='product-variants-for-product'),
+    # This NEW URL retrieves a specific variant of a specific product
+    path('products/<int:product_pk>/variants/<int:variant_pk>/', views.product_variant_detail, name='product-variant-detail'),
 
-    # Product Images (optional, often managed via product views or admin)
-    path('product-images/', views.product_image_list_create, name='product-image-list-create'),
-    path('product-images/<int:pk>/', views.product_image_detail, name='product-image-detail'),
-
-    # Product Variants (optional, often managed via product views or admin)
-    path('product-variants/', views.product_variant_list_create, name='product-variant-list-create'),
-    path('product-variants/<int:pk>/', views.product_variant_detail, name='product-variant-detail'),
+    # # Product Variant URLs (Global - for retrieving any variant by its global ID)
+    # path('variants/', views.variant_list, name='variant-list'),
+    # path('variants/<int:pk>/', views.variant_detail, name='variant-detail'),
 ]
