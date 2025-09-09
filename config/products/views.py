@@ -1,76 +1,75 @@
-# your_app_name/views.py
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-
-from django.shortcuts import get_object_or_404, Http404
-
 from .models import Product, ProductVariant
-from .serializers import ProductSerializer, ProductVariantSerializer
+from .serializers import ProductListSerializer, ProductDetailSerializer, ProductVariantSerializer
 
-# --- Product Views ---
-
+# Existing views (keeping them for context, no changes needed)
 @api_view(['GET'])
 def product_list(request):
-    """
-    List all products.
-    """
-    products = Product.objects.all().order_by('name_en')
-    serializer = ProductSerializer(products, many=True, context={'request': request})
+    products = Product.objects.filter(is_active=True).order_by('-created_at')
+    serializer = ProductListSerializer(products, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])
 def product_detail(request, pk):
-    """
-    Retrieve a product instance.
-    """
-    product = get_object_or_404(Product, pk=pk)
-    serializer = ProductSerializer(product, context={'request': request})
+    try:
+        product = Product.objects.get(pk=pk)
+    except Product.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = ProductDetailSerializer(product)
     return Response(serializer.data)
 
 @api_view(['GET'])
-def product_variants_list(request, pk):
+def product_variant_list(request):
+    variants = ProductVariant.objects.all().order_by('-created_at')
+    serializer = ProductVariantSerializer(variants, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def product_variant_detail(request, pk):
+    try:
+        variant = ProductVariant.objects.get(pk=pk)
+    except ProductVariant.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = ProductVariantSerializer(variant)
+    return Response(serializer.data)
+
+
+# NEW VIEWS FOR NESTED VARIANTS
+
+@api_view(['GET'])
+def product_variants_by_product(request, product_pk):
     """
     List all variants for a specific product.
+    URL: /api/products/<product_pk>/variants/
     """
-    product = get_object_or_404(Product, pk=pk)
-    variants = product.variants.all().order_by('size', 'color') # Added ordering for consistency
-    serializer = ProductVariantSerializer(variants, many=True, context={'request': request})
+    try:
+        product = Product.objects.get(pk=product_pk)
+    except Product.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    variants = product.variants.all().order_by('id') # Access variants through the related_name
+    serializer = ProductVariantSerializer(variants, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])
-def product_variant_detail(request, product_pk, variant_pk):
+def product_variant_detail_by_product(request, product_pk, variant_pk):
     """
     Retrieve a specific variant for a specific product.
+    URL: /api/products/<product_pk>/variants/<variant_pk>/
     """
     try:
         # First, ensure the product exists
-        product = get_object_or_404(Product, pk=product_pk)
-        # Then, get the variant ensuring it belongs to that product
-        variant = get_object_or_404(ProductVariant, product=product, pk=variant_pk)
-    except Http404:
-        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = ProductVariantSerializer(variant, context={'request': request})
-    return Response(serializer.data)
-
-
-# --- Product Variant Views (Global) ---
-
-@api_view(['GET'])
-def variant_list(request):
-    """
-    List all product variants globally.
-    """
-    variants = ProductVariant.objects.all().order_by('product__name_en', 'size', 'color')
-    serializer = ProductVariantSerializer(variants, many=True, context={'request': request})
-    return Response(serializer.data)
-
-@api_view(['GET'])
-def variant_detail(request, pk):
-    """
-    Retrieve a product variant instance by its global ID.
-    """
-    variant = get_object_or_404(ProductVariant, pk=pk)
-    serializer = ProductVariantSerializer(variant, context={'request': request})
+        product = Product.objects.get(pk=product_pk)
+        # Then, find the variant belonging to that product
+        variant = product.variants.get(pk=variant_pk)
+    except Product.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    except ProductVariant.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = ProductVariantSerializer(variant)
     return Response(serializer.data)
